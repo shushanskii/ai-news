@@ -150,10 +150,11 @@ are task-runner flags: `pnpm run verify --force` re-runs the tasks instead of re
 Turborepo cache. `commitlint` separately rejects commit messages that are not
 [Conventional Commits](https://www.conventionalcommits.org/).
 
-**A hook is not a gate.** `git commit --no-verify` skips it in one flag, and nothing in this
-repository runs `verify` on a push yet: there is no pipeline here. Until `.github/workflows` exists,
-the hook is the only thing enforcing the gate — see [conventions/project.md](./conventions/project.md),
-"CI is not running".
+**A hook is not a gate, and this repository does not rely on one.** `git commit --no-verify` skips it
+in one flag, so `.github/workflows/ci.yml` runs the same `verify` on every push to `main` and on every
+pull request, and `main` will not merge without a green `verify`. The setting that makes it required
+is not in the repository — see
+[conventions/project.md](./conventions/project.md), "CI is the gate".
 
 ## Layout
 

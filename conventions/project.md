@@ -84,14 +84,22 @@ Renaming it (`@app` → something this project owns) touches the four package ma
 `@app/shared` import, and `noExternal` in `apps/api/tsup.config.ts`. It has not been done here: the
 scope is a name, not a boundary, and the rename is best done alone rather than mixed into a feature.
 
-## CI is not running
+## CI is the gate
 
-There is no pipeline in this repository. The template's Forgejo workflow was deleted with the rest of
-the Forgejo-era manifests, and nothing replaces it: `pnpm run verify` runs from the `pre-commit` hook,
-which `--no-verify` skips, and from whoever types it.
+`.github/workflows/ci.yml` runs `pnpm install --frozen-lockfile` and `pnpm run verify` on every push
+to `main` and on every pull request, and `main` requires the `verify` check before it merges. The
+`pre-commit` hook is the same command, earlier and local: `--no-verify` skips the hook, not the
+pipeline.
 
-What a first workflow has to do is already known — run `pnpm install --frozen-lockfile` and
-`pnpm run verify` on every push and pull request — and one thing outside the repository matters more
-than the file: on the free plan, branch protection exists only in public repositories, so the rule
-"`verify` must be green before merge" is enforceable here and would silently disappear if the
-repository were made private.
+Three things about it are settings rather than files, and each one is a way this repository can become
+quietly unguarded:
+
+- **The required check is matched by name.** The job is called `verify`. Renaming it orphans the rule,
+  and a required check that never reports leaves every pull request waiting on "expected".
+- **The workflow therefore has no `paths-ignore`.** A run that skips a markdown-only change does not
+  report either, and the pull request that changed only a README would wait forever.
+- **Branch protection on the free plan exists only while the repository is public.** Switching it to
+  private removes the rule and the enforcement with it, without a word.
+
+What is not here: a pipeline that builds the two container images. `Dockerfile.api` and
+`Dockerfile.web` build locally and are unverified by CI until there is a registry to push them to.

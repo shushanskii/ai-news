@@ -1,6 +1,5 @@
-# The gate lives in scripts/gate.mjs, so this hook and a human at a keyboard run one thing.
-# `--no-verify` still bypasses this, and there is no pipeline behind it yet — see
-# conventions/project.md, "CI is not running".
+# The gate lives in scripts/gate.mjs, so this hook and the pipeline run one thing.
+# `--no-verify` skips this hook; .github/workflows/ci.yml is what a commit cannot skip.
 if ! pnpm run verify; then
   echo ""
   echo "✖ pre-commit failed — fix the issues reported above, then re-commit."

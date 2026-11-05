@@ -1,0 +1,72 @@
+name: CI
+
+# The gate has to run somewhere a commit cannot skip it. `pre-commit` is the fast local pass, and
+# `git commit --no-verify` gets around it in one flag — so this file is the enforcement and the hook
+# is the courtesy. It closes the section in `conventions/project.md` titled "CI is not running".
+#
+# One job, full run, always. Four packages, 135 tests, two small bundles: filtering to affected
+# packages would cost a base ref, a fetch depth, and a way to be falsely green, and would buy
+# seconds.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # A manual run from the Actions UI: how to re-check a commit whose runner died for a reason that
+  # has nothing to do with the code.
+  workflow_dispatch:
+
+# Deliberately no `paths-ignore`. A required status check that does not report is not "skipped", it
+# is "expected" — and a pull request that only touches a README would wait on it forever. A workflow
+# backing a required check runs on every change, or the rule blocks the wrong things.
+
+# Least privilege: this workflow reads the repository and writes nothing back.
+permissions:
+  contents: read
+
+# A second push to the same branch makes the run in flight worthless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    # Branch protection on `main` requires this exact string. GitHub matches on the name, not on
+    # anything structural, so renaming this job orphans the rule and every pull request then waits
+    # on a check that will never arrive.
+    name: verify
+    runs-on: ubuntu-latest
+    # The gate is the whole budget of this workflow; a hung dev server should not hold a runner for
+    # the default 6 hours.
+    timeout-minutes: 15
+    env:
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Nothing here pushes back to git, so the runner keeps no credential to lose.
+          persist-credentials: false
+
+      # pnpm at the version named by `packageManager`, so CI cannot resolve on a pnpm that writes a
+      # different lockfile than the one committed.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          # The floor of `engines.node` and the image both Dockerfiles build on. Testing the floor
+          # rather than whatever a laptop happens to run is the point: `>=22` is a promise.
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        # A manifest that disagrees with the lockfile is a failed build, not a silent re-resolution:
+        # the versions that shipped to production have to be the ones that were reviewed.
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify
+        # typecheck, Biome, fallow, tests, both bundles — the same `scripts/gate.mjs` the hook runs.
+        #
+        # `--force` so a run proves the code builds instead of replaying a cache hit. Nothing
+        # persists `.turbo` here, so today it costs seconds; the day someone adds a cache, it is the
+        # line that keeps a green run meaning something.
+        run: pnpm run verify --force
