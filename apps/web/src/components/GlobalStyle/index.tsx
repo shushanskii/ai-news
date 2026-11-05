@@ -2,10 +2,10 @@ import { createGlobalStyle } from "styled-components";
 
 // A component by the conventions' definition (`conventions/react.md`: styled primitives live under
 // `components/`), and the only place in `web` that styles an element it does not own. That reach is
-// why `button` and `input` are styled here rather than per component: the plain `<button>` and
-// `<input>` elements in `App` and `TodoForm` have no styled wrapper of their own, and a page of
-// browser-default controls is what makes the running app look unstyled. A styled component that
-// needs a quieter control overrides these rules by class, which wins on specificity.
+// why `button`, `input`, `textarea` and `select` are styled here rather than per component: the
+// plain elements in the form have no styled wrapper of their own, and a page of browser-default
+// controls is what makes the running app look unstyled. A styled component that needs a quieter
+// control overrides these rules by class, which wins on specificity.
 export const GlobalStyle = createGlobalStyle`
   *,
   *::before,
@@ -35,11 +35,15 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   button,
-  input {
+  input,
+  select,
+  textarea {
     font: inherit;
   }
 
-  input {
+  input,
+  select,
+  textarea {
     background-color: #ffffff;
     border: 1px solid #d6dae1;
     border-radius: 6px;
@@ -47,11 +51,17 @@ export const GlobalStyle = createGlobalStyle`
     padding: 7px 10px;
   }
 
-  input::placeholder {
+  textarea {
+    resize: vertical;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
     color: #9aa2b1;
   }
 
   button {
+    align-self: start;
     background-color: #2563eb;
     border: 1px solid transparent;
     border-radius: 6px;
@@ -61,12 +71,21 @@ export const GlobalStyle = createGlobalStyle`
     transition: background-color 120ms ease-in-out;
   }
 
-  button:hover {
+  button:hover:not(:disabled) {
     background-color: #1d4ed8;
   }
 
+  /* A run takes minutes, and a button that still looks pressable while one is going is an
+     invitation to start a second. */
+  button:disabled {
+    background-color: #9aa2b1;
+    cursor: progress;
+  }
+
   button:focus-visible,
-  input:focus-visible {
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
     outline: 2px solid #4c8dff;
     outline-offset: 1px;
   }

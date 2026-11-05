@@ -1,0 +1,909 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ResearchForm > does not submit a prompt too short to search for 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-dkHxwO gKQpAI"
+  >
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Тема
+      <textarea
+        placeholder="например: что произошло с ценами на SSD за последнюю неделю"
+        rows="3"
+      >
+          ai  
+      </textarea>
+    </label>
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Системный промпт
+      <textarea
+        placeholder="необязательно: чем агент должен отличаться от обычного"
+        rows="2"
+      />
+    </label>
+    <fieldset
+      class="sc-jTkVfb kUkrmx"
+    >
+      <legend
+        class="sc-gLfMdy dOzBEh"
+      >
+        Инструменты
+      </legend>
+      <div
+        class="sc-iBIXdp klsOgr"
+      >
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Поиск
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            SearXNG
+          </span>
+        </label>
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Чтение страниц
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            Crawl4AI
+          </span>
+        </label>
+      </div>
+    </fieldset>
+    <div
+      class="sc-eDgbZQ fmNsLO"
+    >
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Источников не больше
+        <input
+          max="20"
+          min="1"
+          type="number"
+          value="8"
+        />
+      </label>
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Язык ответа
+        <select>
+          <option
+            value=""
+          >
+            как в запросе
+          </option>
+          <option
+            value="ru"
+          >
+            русский
+          </option>
+          <option
+            value="en"
+          >
+            английский
+          </option>
+        </select>
+      </label>
+    </div>
+    <button
+      disabled=""
+      type="submit"
+    >
+      Искать новости
+    </button>
+  </form>
+</DocumentFragment>
+`;
+
+exports[`ResearchForm > leaves the system prompt and the language out when they were left blank 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-dkHxwO gKQpAI"
+  >
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Тема
+      <textarea
+        placeholder="например: что произошло с ценами на SSD за последнюю неделю"
+        rows="3"
+      >
+        цены на SSD
+      </textarea>
+    </label>
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Системный промпт
+      <textarea
+        placeholder="необязательно: чем агент должен отличаться от обычного"
+        rows="2"
+      >
+           
+      </textarea>
+    </label>
+    <fieldset
+      class="sc-jTkVfb kUkrmx"
+    >
+      <legend
+        class="sc-gLfMdy dOzBEh"
+      >
+        Инструменты
+      </legend>
+      <div
+        class="sc-iBIXdp klsOgr"
+      >
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Поиск
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            SearXNG
+          </span>
+        </label>
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Чтение страниц
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            Crawl4AI
+          </span>
+        </label>
+      </div>
+    </fieldset>
+    <div
+      class="sc-eDgbZQ fmNsLO"
+    >
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Источников не больше
+        <input
+          max="20"
+          min="1"
+          type="number"
+          value="8"
+        />
+      </label>
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Язык ответа
+        <select>
+          <option
+            value=""
+          >
+            как в запросе
+          </option>
+          <option
+            value="ru"
+          >
+            русский
+          </option>
+          <option
+            value="en"
+          >
+            английский
+          </option>
+        </select>
+      </label>
+    </div>
+    <button
+      type="submit"
+    >
+      Искать новости
+    </button>
+  </form>
+</DocumentFragment>
+`;
+
+exports[`ResearchForm > locks the form while a run is going 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-dkHxwO gKQpAI"
+  >
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Тема
+      <textarea
+        placeholder="например: что произошло с ценами на SSD за последнюю неделю"
+        rows="3"
+      >
+        цены на SSD
+      </textarea>
+    </label>
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Системный промпт
+      <textarea
+        placeholder="необязательно: чем агент должен отличаться от обычного"
+        rows="2"
+      />
+    </label>
+    <fieldset
+      class="sc-jTkVfb kUkrmx"
+    >
+      <legend
+        class="sc-gLfMdy dOzBEh"
+      >
+        Инструменты
+      </legend>
+      <div
+        class="sc-iBIXdp klsOgr"
+      >
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Поиск
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            SearXNG
+          </span>
+        </label>
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Чтение страниц
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            Crawl4AI
+          </span>
+        </label>
+      </div>
+    </fieldset>
+    <div
+      class="sc-eDgbZQ fmNsLO"
+    >
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Источников не больше
+        <input
+          max="20"
+          min="1"
+          type="number"
+          value="8"
+        />
+      </label>
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Язык ответа
+        <select>
+          <option
+            value=""
+          >
+            как в запросе
+          </option>
+          <option
+            value="ru"
+          >
+            русский
+          </option>
+          <option
+            value="en"
+          >
+            английский
+          </option>
+        </select>
+      </label>
+    </div>
+    <button
+      disabled=""
+      type="submit"
+    >
+      Ищу…
+    </button>
+  </form>
+</DocumentFragment>
+`;
+
+exports[`ResearchForm > refuses to submit with no tool at all 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-dkHxwO gKQpAI"
+  >
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Тема
+      <textarea
+        placeholder="например: что произошло с ценами на SSD за последнюю неделю"
+        rows="3"
+      >
+        цены на SSD
+      </textarea>
+    </label>
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Системный промпт
+      <textarea
+        placeholder="необязательно: чем агент должен отличаться от обычного"
+        rows="2"
+      />
+    </label>
+    <fieldset
+      class="sc-jTkVfb kUkrmx"
+    >
+      <legend
+        class="sc-gLfMdy dOzBEh"
+      >
+        Инструменты
+      </legend>
+      <div
+        class="sc-iBIXdp klsOgr"
+      >
+        <label
+          class="sc-bcHNtg dmuqXX"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Поиск
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            SearXNG
+          </span>
+        </label>
+        <label
+          class="sc-bcHNtg dmuqXX"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Чтение страниц
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            Crawl4AI
+          </span>
+        </label>
+      </div>
+    </fieldset>
+    <div
+      class="sc-eDgbZQ fmNsLO"
+    >
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Источников не больше
+        <input
+          max="20"
+          min="1"
+          type="number"
+          value="8"
+        />
+      </label>
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Язык ответа
+        <select>
+          <option
+            value=""
+          >
+            как в запросе
+          </option>
+          <option
+            value="ru"
+          >
+            русский
+          </option>
+          <option
+            value="en"
+          >
+            английский
+          </option>
+        </select>
+      </label>
+    </div>
+    <p
+      class="sc-ftDObM eDLbYU"
+    >
+      Без инструментов агенту нечем искать — оставьте хотя бы один.
+    </p>
+    <button
+      disabled=""
+      type="submit"
+    >
+      Искать новости
+    </button>
+  </form>
+</DocumentFragment>
+`;
+
+exports[`ResearchForm > sends only the tools left checked 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-dkHxwO gKQpAI"
+  >
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Тема
+      <textarea
+        placeholder="например: что произошло с ценами на SSD за последнюю неделю"
+        rows="3"
+      >
+        цены на SSD
+      </textarea>
+    </label>
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Системный промпт
+      <textarea
+        placeholder="необязательно: чем агент должен отличаться от обычного"
+        rows="2"
+      />
+    </label>
+    <fieldset
+      class="sc-jTkVfb kUkrmx"
+    >
+      <legend
+        class="sc-gLfMdy dOzBEh"
+      >
+        Инструменты
+      </legend>
+      <div
+        class="sc-iBIXdp klsOgr"
+      >
+        <label
+          class="sc-bcHNtg dmuqXX"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Поиск
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            SearXNG
+          </span>
+        </label>
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Чтение страниц
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            Crawl4AI
+          </span>
+        </label>
+      </div>
+    </fieldset>
+    <div
+      class="sc-eDgbZQ fmNsLO"
+    >
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Источников не больше
+        <input
+          max="20"
+          min="1"
+          type="number"
+          value="8"
+        />
+      </label>
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Язык ответа
+        <select>
+          <option
+            value=""
+          >
+            как в запросе
+          </option>
+          <option
+            value="ru"
+          >
+            русский
+          </option>
+          <option
+            value="en"
+          >
+            английский
+          </option>
+        </select>
+      </label>
+    </div>
+    <button
+      type="submit"
+    >
+      Искать новости
+    </button>
+  </form>
+</DocumentFragment>
+`;
+
+exports[`ResearchForm > sends the system prompt and the language that were filled in 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-dkHxwO gKQpAI"
+  >
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Тема
+      <textarea
+        placeholder="например: что произошло с ценами на SSD за последнюю неделю"
+        rows="3"
+      >
+        цены на SSD
+      </textarea>
+    </label>
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Системный промпт
+      <textarea
+        placeholder="необязательно: чем агент должен отличаться от обычного"
+        rows="2"
+      >
+        Пиши для инженера.
+      </textarea>
+    </label>
+    <fieldset
+      class="sc-jTkVfb kUkrmx"
+    >
+      <legend
+        class="sc-gLfMdy dOzBEh"
+      >
+        Инструменты
+      </legend>
+      <div
+        class="sc-iBIXdp klsOgr"
+      >
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Поиск
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            SearXNG
+          </span>
+        </label>
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Чтение страниц
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            Crawl4AI
+          </span>
+        </label>
+      </div>
+    </fieldset>
+    <div
+      class="sc-eDgbZQ fmNsLO"
+    >
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Источников не больше
+        <input
+          max="20"
+          min="1"
+          type="number"
+          value="3"
+        />
+      </label>
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Язык ответа
+        <select>
+          <option
+            value=""
+          >
+            как в запросе
+          </option>
+          <option
+            value="ru"
+          >
+            русский
+          </option>
+          <option
+            value="en"
+          >
+            английский
+          </option>
+        </select>
+      </label>
+    </div>
+    <button
+      type="submit"
+    >
+      Искать новости
+    </button>
+  </form>
+</DocumentFragment>
+`;
+
+exports[`ResearchForm > submits the prompt with both tools and the default ceiling 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-dkHxwO gKQpAI"
+  >
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Тема
+      <textarea
+        placeholder="например: что произошло с ценами на SSD за последнюю неделю"
+        rows="3"
+      >
+        цены на SSD
+      </textarea>
+    </label>
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Системный промпт
+      <textarea
+        placeholder="необязательно: чем агент должен отличаться от обычного"
+        rows="2"
+      />
+    </label>
+    <fieldset
+      class="sc-jTkVfb kUkrmx"
+    >
+      <legend
+        class="sc-gLfMdy dOzBEh"
+      >
+        Инструменты
+      </legend>
+      <div
+        class="sc-iBIXdp klsOgr"
+      >
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Поиск
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            SearXNG
+          </span>
+        </label>
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Чтение страниц
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            Crawl4AI
+          </span>
+        </label>
+      </div>
+    </fieldset>
+    <div
+      class="sc-eDgbZQ fmNsLO"
+    >
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Источников не больше
+        <input
+          max="20"
+          min="1"
+          type="number"
+          value="8"
+        />
+      </label>
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Язык ответа
+        <select>
+          <option
+            value=""
+          >
+            как в запросе
+          </option>
+          <option
+            value="ru"
+          >
+            русский
+          </option>
+          <option
+            value="en"
+          >
+            английский
+          </option>
+        </select>
+      </label>
+    </div>
+    <button
+      type="submit"
+    >
+      Искать новости
+    </button>
+  </form>
+</DocumentFragment>
+`;
+
+exports[`ResearchForm > trims the prompt before sending it 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-dkHxwO gKQpAI"
+  >
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Тема
+      <textarea
+        placeholder="например: что произошло с ценами на SSD за последнюю неделю"
+        rows="3"
+      >
+          цены на SSD  
+      </textarea>
+    </label>
+    <label
+      class="sc-hLllbt fqldWW"
+    >
+      Системный промпт
+      <textarea
+        placeholder="необязательно: чем агент должен отличаться от обычного"
+        rows="2"
+      />
+    </label>
+    <fieldset
+      class="sc-jTkVfb kUkrmx"
+    >
+      <legend
+        class="sc-gLfMdy dOzBEh"
+      >
+        Инструменты
+      </legend>
+      <div
+        class="sc-iBIXdp klsOgr"
+      >
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Поиск
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            SearXNG
+          </span>
+        </label>
+        <label
+          class="sc-bcHNtg lmxgaW"
+        >
+          <input
+            checked=""
+            type="checkbox"
+          />
+          Чтение страниц
+          <span
+            class="sc-gsMGyr bZLmDc"
+          >
+            Crawl4AI
+          </span>
+        </label>
+      </div>
+    </fieldset>
+    <div
+      class="sc-eDgbZQ fmNsLO"
+    >
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Источников не больше
+        <input
+          max="20"
+          min="1"
+          type="number"
+          value="8"
+        />
+      </label>
+      <label
+        class="sc-hLllbt fqldWW"
+      >
+        Язык ответа
+        <select>
+          <option
+            value=""
+          >
+            как в запросе
+          </option>
+          <option
+            value="ru"
+          >
+            русский
+          </option>
+          <option
+            value="en"
+          >
+            английский
+          </option>
+        </select>
+      </label>
+    </div>
+    <button
+      type="submit"
+    >
+      Искать новости
+    </button>
+  </form>
+</DocumentFragment>
+`;

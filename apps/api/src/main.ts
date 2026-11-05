@@ -1,56 +1,67 @@
-import { TodoStatus } from "@app/shared";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { createLogger } from "@app/agent";
 import { createApp } from "#app";
-import { createTodosService, type TodosService } from "#services/todos";
+import { createNewsService, DEFAULT_TIMEOUT_MS } from "#services/news";
 
-const port = Number(process.env.PORT ?? 3000);
-const dayInMs = 24 * 60 * 60 * 1000;
+/**
+ * Loads `.env` if there is one, walking up from the working directory.
+ *
+ * The agent reads `process.env` when a run starts, so the file has to be in place before the first
+ * request rather than before the first import. Walking up is what makes `pnpm dev` from `apps/api`
+ * and `node dist/main.js` from the repository root read the same file: the variables describe the
+ * deployment, not the directory a script happened to start in.
+ */
+function loadEnv(startDirectory: string): string | undefined {
+  for (let directory = startDirectory; ; directory = join(directory, "..")) {
+    const candidate = join(directory, ".env");
 
-// An empty list is what a freshly restarted service answers with, and on screen it is
-// indistinguishable from a broken app. These rows are props for the example domain, not a feature:
-// they go away with the todos themselves (conventions/project.md, "The example domain is
-// disposable"), and this file is the whole of their footprint.
-//
-// Deadlines are offsets from today rather than dates, so a row cannot quietly stop being overdue
-// next month; and `now` is the clock the service already holds, so the seed and the overdue filter
-// cannot disagree about what today is.
-function seedTodos(service: TodosService, now: () => Date): void {
-  const today = now().getTime();
+    if (existsSync(candidate)) {
+      process.loadEnvFile(candidate);
 
-  function dueIn(days: number): string {
-    return new Date(today + days * dayInMs).toISOString().slice(0, 10);
-  }
+      return candidate;
+    }
 
-  // `status` is carried per row because one todo starts finished: `create` always opens a todo
-  // Active, so a finished row is a create plus the update that closes it.
-  const rows: readonly {
-    readonly title: string;
-    readonly dueDate?: string;
-    readonly done: boolean;
-  }[] = [
-    { title: "read the conventions top to bottom", dueDate: dueIn(-3), done: false },
-    { title: "rename the @app scope to something yours", dueDate: dueIn(2), done: false },
-    { title: "swap the in-memory store for a real repository", done: false },
-    { title: "turn on branch protection for main", done: true },
-  ];
+    const parent = join(directory, "..");
 
-  for (const row of rows) {
-    const created = service.create({ title: row.title, dueDate: row.dueDate });
-
-    if (row.done) {
-      service.update(created.id, { status: TodoStatus.Done });
+    if (parent === directory) {
+      return undefined;
     }
   }
 }
 
-const now = () => new Date();
-const service = createTodosService(now);
+const envFile = loadEnv(process.cwd());
+const port = Number(process.env.PORT ?? 3000);
 
-// `pnpm dev` starts with rows to look at; a process started as production starts as empty, because
-// nobody wants demo todos in a deployment that grew out of this template.
-if (process.env.NODE_ENV !== "production") {
-  seedTodos(service, now);
-}
+// One logger for the process: the request lines and the agent's run lines come out of the same
+// stream, in the same format, which is the only way to read an incident as one story.
+const logger = createLogger();
 
-createApp(now, service).listen(port, () => {
-  console.log(`api listening on http://localhost:${port}`);
+// A deployment on a laptop and a deployment on a GPU box differ by an order of magnitude in how
+// long one run takes, so the ceiling is configuration — read here, where `PORT` is read, rather
+// than inside the service.
+const timeoutMs = readTimeout(process.env.NEWS_TIMEOUT_MS);
+
+createApp(createNewsService({ timeoutMs }), logger).listen(port, () => {
+  logger.info("api listening", {
+    url: `http://localhost:${port}`,
+    ...(envFile === undefined ? {} : { envFile }),
+    timeoutMs,
+  });
 });
+
+// A value that is not a number is refused out loud: a silently defaulted timeout looks exactly
+// like a service that has become slow.
+function readTimeout(value: string | undefined): number {
+  if (value === undefined || value.trim() === "") {
+    return DEFAULT_TIMEOUT_MS;
+  }
+
+  const parsed = Number(value.trim());
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`NEWS_TIMEOUT_MS wants a whole number of milliseconds, got "${value}"`);
+  }
+
+  return parsed;
+}

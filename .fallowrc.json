@@ -11,6 +11,10 @@
         "patterns": ["apps/api/src/**/*.test.ts"]
       },
       {
+        "name": "agent-test",
+        "patterns": ["packages/agent/src/**/*.test.ts"]
+      },
+      {
         "name": "web-test",
         "patterns": ["apps/web/src/**/*.test.ts", "apps/web/src/**/*.test.tsx"]
       },
@@ -19,8 +23,23 @@
       { "name": "shared-schemas", "patterns": ["packages/shared/src/schemas/**"] },
       { "name": "shared-barrel", "patterns": ["packages/shared/src/index.ts"] },
 
+      { "name": "agent-types", "patterns": ["packages/agent/src/types/**"] },
+      { "name": "agent-errors", "patterns": ["packages/agent/src/errors/**"] },
+      { "name": "agent-schemas", "patterns": ["packages/agent/src/schemas/**"] },
+      { "name": "agent-config", "patterns": ["packages/agent/src/config/**"] },
+      { "name": "agent-logging", "patterns": ["packages/agent/src/logging/**"] },
+      { "name": "agent-bibliography", "patterns": ["packages/agent/src/bibliography/**"] },
+      { "name": "agent-tools", "patterns": ["packages/agent/src/tools/**"] },
+      { "name": "agent-model", "patterns": ["packages/agent/src/model/**"] },
+      { "name": "agent-state", "patterns": ["packages/agent/src/state/**"] },
+      { "name": "agent-nodes", "patterns": ["packages/agent/src/nodes/**"] },
+      { "name": "agent-edges", "patterns": ["packages/agent/src/edges/**"] },
+      { "name": "agent-graph", "patterns": ["packages/agent/src/graph/**"] },
+      { "name": "agent-barrel", "patterns": ["packages/agent/src/index.ts"] },
+
       { "name": "api-services", "patterns": ["apps/api/src/services/**"] },
       { "name": "api-routes", "patterns": ["apps/api/src/routes/**"] },
+      { "name": "api-middleware", "patterns": ["apps/api/src/middleware/**"] },
       { "name": "api-app", "patterns": ["apps/api/src/app/**"] },
       { "name": "api-entry", "patterns": ["apps/api/src/main.ts"] },
 
@@ -43,7 +62,34 @@
       },
       {
         "from": "api-test",
-        "allow": ["api-services", "api-routes", "api-app", "api-entry", "shared-barrel"]
+        "allow": [
+          "api-services",
+          "api-routes",
+          "api-middleware",
+          "api-app",
+          "api-entry",
+          "agent-barrel",
+          "shared-barrel"
+        ]
+      },
+      {
+        "from": "agent-test",
+        "allow": [
+          "agent-types",
+          "agent-errors",
+          "agent-schemas",
+          "agent-config",
+          "agent-logging",
+          "agent-bibliography",
+          "agent-tools",
+          "agent-model",
+          "agent-state",
+          "agent-nodes",
+          "agent-edges",
+          "agent-graph",
+          "agent-barrel",
+          "shared-barrel"
+        ]
       },
       {
         "from": "web-test",
@@ -65,10 +111,64 @@
       { "from": "shared-schemas", "allow": ["shared-types"] },
       { "from": "shared-barrel", "allow": ["shared-types", "shared-schemas"] },
 
-      { "from": "api-services", "allow": ["shared-barrel"] },
-      { "from": "api-routes", "allow": ["api-services", "shared-barrel"] },
-      { "from": "api-app", "allow": ["api-routes", "api-services", "shared-barrel"] },
-      { "from": "api-entry", "allow": ["api-app", "api-routes", "api-services", "shared-barrel"] },
+      {
+        "from": "agent-types",
+        "allow": []
+      },
+      { "from": "agent-errors", "allow": ["agent-types"] },
+      { "from": "agent-schemas", "allow": ["agent-types"] },
+      { "from": "agent-config", "allow": ["agent-errors", "agent-types"] },
+      { "from": "agent-logging", "allow": [] },
+      { "from": "agent-bibliography", "allow": ["agent-types", "shared-barrel"] },
+      {
+        "from": "agent-tools",
+        "allow": ["agent-config", "agent-errors", "agent-schemas", "agent-types", "shared-barrel"]
+      },
+      { "from": "agent-model", "allow": ["agent-config", "agent-schemas", "agent-types"] },
+      { "from": "agent-state", "allow": ["agent-schemas", "shared-barrel"] },
+      {
+        "from": "agent-nodes",
+        "allow": [
+          "agent-errors",
+          "agent-logging",
+          "agent-model",
+          "agent-state",
+          "agent-types",
+          "shared-barrel"
+        ]
+      },
+      { "from": "agent-edges", "allow": ["agent-state"] },
+      {
+        "from": "agent-graph",
+        "allow": [
+          "agent-bibliography",
+          "agent-config",
+          "agent-errors",
+          "agent-edges",
+          "agent-logging",
+          "agent-model",
+          "agent-nodes",
+          "agent-state",
+          "agent-tools",
+          "agent-types",
+          "shared-barrel"
+        ]
+      },
+      {
+        "from": "agent-barrel",
+        "allow": ["agent-config", "agent-errors", "agent-graph", "agent-logging", "agent-types"]
+      },
+      { "from": "api-services", "allow": ["agent-barrel", "shared-barrel"] },
+      { "from": "api-routes", "allow": ["api-services", "agent-barrel", "shared-barrel"] },
+      { "from": "api-middleware", "allow": ["agent-barrel"] },
+      {
+        "from": "api-app",
+        "allow": ["api-middleware", "api-routes", "api-services", "agent-barrel", "shared-barrel"]
+      },
+      {
+        "from": "api-entry",
+        "allow": ["api-app", "api-routes", "api-services", "agent-barrel", "shared-barrel"]
+      },
 
       { "from": "web-api", "allow": ["shared-barrel"] },
       { "from": "web-actions", "allow": ["shared-barrel"] },

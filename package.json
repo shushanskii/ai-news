@@ -1,5 +1,5 @@
 {
-  "name": "ts-scaffold",
+  "name": "ai-news",
   "private": true,
   "packageManager": "pnpm@11.11.0",
   "engines": {

@@ -1,13 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import createSagaMiddleware from "redux-saga";
-import { todosReducer } from "#reducers/todos";
-import { rootSaga } from "#sagas/todos";
+import { newsReducer } from "#reducers/news";
+import { rootSaga } from "#sagas/news";
 
 export function createStore() {
   const sagaMiddleware = createSagaMiddleware();
 
   const store = configureStore({
-    reducer: { todos: todosReducer },
+    reducer: { news: newsReducer },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({ thunk: false }).concat(sagaMiddleware),
   });

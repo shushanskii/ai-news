@@ -119,9 +119,11 @@ pnpm run verify --force  # the same, ignoring the Turborepo cache
 - Flags you add are forwarded to the task runner only: `--force` reaches turbo, not Biome or
   fallow. That routing is `scripts/gate.mjs`, and it exists because a chained script string appends
   the flag to the last tool in the chain instead.
-- **A hook is not a gate.** `git commit --no-verify` skips it. `.forgejo/workflows/ci.yml` runs the
-  same `verify` on every push and pull request, and branch protection on `main` is what makes it
-  required — that one setting is not in the repository.
+- **A hook is not a gate.** `git commit --no-verify` skips it. What makes a gate real is a pipeline
+  running the same `verify` on every push and pull request, with branch protection on `main` making
+  it required — and whether this repository has either is recorded in
+  [`project.md`](./project.md), not here, because the answer changes and this file is meant to survive
+  it.
 - **`pnpm run fix`** = `biome check --write .` (auto-fix lint + format). fallow's own fixes remove
   code, so run `fallow fix` deliberately — never as part of `fix`.
 - Biome: 2-space indent, double quotes, semicolons, `useNamingConvention` with `strictCase: false`

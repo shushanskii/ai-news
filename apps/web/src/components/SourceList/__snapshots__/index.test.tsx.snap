@@ -1,0 +1,89 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SourceList > says so when the agent opened nothing 1`] = `
+<DocumentFragment>
+  <section
+    aria-label="Источники"
+    class="sc-jTkVfb jJTDSh"
+    role="region"
+  >
+    <h3
+      class="sc-gLfMdy jrVYdM"
+    >
+      Источники: 0
+    </h3>
+    <p
+      class="sc-ftDObM eULIGb"
+    >
+      Агент не нашёл ни одной страницы — сводка написана по его собственным знаниям.
+    </p>
+  </section>
+</DocumentFragment>
+`;
+
+exports[`SourceList > tells an opened page from a headline the agent only saw 1`] = `
+<DocumentFragment>
+  <section
+    aria-label="Источники"
+    class="sc-jTkVfb jJTDSh"
+    role="region"
+  >
+    <h3
+      class="sc-gLfMdy jrVYdM"
+    >
+      Источники: 2, открыто 1
+    </h3>
+    <ul
+      class="sc-iBIXdp gelCrO"
+    >
+      <li
+        class="sc-bcHNtg gwhFam"
+      >
+        <div
+          class="sc-gsMGyr eAnNSm"
+        >
+          <a
+            class="sc-dkHxwO cPjibn"
+            href="https://example.com/opened"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Открытая страница
+          </a>
+          <span
+            class="sc-hLllbt bTntiU"
+          >
+            открыт
+          </span>
+        </div>
+        <p
+          class="sc-eDgbZQ eJkFim"
+        >
+          Первый абзац страницы.
+        </p>
+      </li>
+      <li
+        class="sc-bcHNtg gwhFam"
+      >
+        <div
+          class="sc-gsMGyr eAnNSm"
+        >
+          <a
+            class="sc-dkHxwO cPjibn"
+            href="https://example.com/seen"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Только заголовок
+          </a>
+          <span
+            class="sc-hLllbt cfJqip"
+          >
+            только сниппет
+          </span>
+        </div>
+      </li>
+    </ul>
+  </section>
+</DocumentFragment>
+`;

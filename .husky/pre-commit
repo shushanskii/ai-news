@@ -1,5 +1,6 @@
-# The gate lives in scripts/gate.mjs, so this hook, CI and a human at a keyboard run one thing.
-# `--no-verify` still bypasses this; .forgejo/workflows/ci.yml is what cannot be skipped.
+# The gate lives in scripts/gate.mjs, so this hook and a human at a keyboard run one thing.
+# `--no-verify` still bypasses this, and there is no pipeline behind it yet — see
+# conventions/project.md, "CI is not running".
 if ! pnpm run verify; then
   echo ""
   echo "✖ pre-commit failed — fix the issues reported above, then re-commit."

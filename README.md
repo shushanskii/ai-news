@@ -1,65 +1,124 @@
-# ts-scaffold
+# ai-news
 
-A working TypeScript monorepo you copy to start a new project. It is not a generator — the
-repository *is* the template, so everything in it is code that builds, tests and passes its own
-quality gate. If it is broken here, you would have found out the hard way in every project started
-from it.
+A research agent that searches the web, opens the pages it found, and writes a digest of what is
+being reported about a topic — plus the browser UI that asks it.
 
-## What's in the box
-
-Three packages, one per shape a real project needs:
-
-| Package | Path | Role | Build |
-|---|---|---|---|
-| `@app/shared` | `packages/shared` | types + zod schemas used by both sides | none — `exports` points at `./src/index.ts` |
-| `@app/api` | `apps/api` | Express service | `tsup` → `dist/main.js` |
-| `@app/web` | `apps/web` | React SPA on Redux Toolkit + Saga | `vite build` → `dist/` |
-
-They demonstrate one end-to-end loop: a click in the browser dispatches an intent, a saga calls the
-service over HTTP, the response is validated and stored, a selector feeds it back to the UI.
+The agent is a LangGraph loop with two tools: **SearXNG** for search and **Crawl4AI** for reading a
+page. It answers with JSON: a summary, the findings behind it, and the URLs it leaned on — each one
+marked whether the agent actually opened the page or only saw a headline about it.
 
 ## Quick start
 
 Requires **Node ≥ 22**. pnpm comes from the `packageManager` field — `corepack enable` is enough.
 
 ```bash
-pnpm install     # also installs the husky hooks
-pnpm dev         # service on :3000, web on :5173
+pnpm install
+cp .env.example .env   # the defaults are the lab's own services; adjust if yours live elsewhere
+pnpm dev               # service on :3000, web on :5173
 ```
 
-Open <http://localhost:5173>. The browser calls `/api/*`, which the Vite dev server proxies to the
-service with the prefix stripped — no CORS, and no base URL baked into the client. Point it
-somewhere else with `API_URL`.
+Open <http://localhost:5173>, type a topic, press **Искать новости**. The browser calls `/api/*`,
+which the Vite dev server proxies to the service with the prefix intact — no CORS, and no base URL
+baked into the client. Point it somewhere else with `API_URL`.
 
-## Making it yours
+A run takes **minutes, not seconds**: several model round trips, each one waiting on a search engine
+or a headless Chromium. On the lab box a topic with four sources costs about three minutes.
 
-The `@app` scope and the `Todo` domain exist so the template runs. Both are meant to be deleted.
+## The interface
 
-1. **Rename the workspace** — `name` in the root `package.json`.
-2. **Rename the scope** — `@app/shared`, `@app/api`, `@app/web` in the three package manifests, plus
-   the `@app/shared` dependency in `apps/api` and `apps/web`.
-3. **Delete the example domain** — everything named `todo`/`Todo` under `packages/shared/src`,
-   `apps/api/src` and `apps/web/src`, including its tests and snapshots. Keep the directory
-   structure; it is the convention.
-4. **Sweep up after it.** The example was the only consumer of several dependencies and exports, so
-   they die with it. Run `pnpm run audit` and remove exactly what fallow names — from the package
-   manifests, from the `catalog:` in `pnpm-workspace.yaml`, and from the source — then run it again
-   until it is quiet. Do not work from a list: what becomes dead depends on which packages you kept.
-5. **Write your first test.** Deleting the example left none, and `vitest` exits non-zero when it
-   finds no test files — on purpose. `pnpm test` stays red until a real test exists, which is the
-   point: the first test lands before the first feature, not after. Do not reach for
-   `--passWithNoTests`; that buys a green gate by making it stop checking.
-6. **Fill in `conventions/project.md`** — it is deliberately close to empty. Package names, the
-   package graph, and domain terms belong there, not in the portable layers.
-7. **Update the boundary zones** in `.fallowrc.json` if you add or rename packages. A package with
-   no zone is a package with no enforced boundaries, and a zone with no rule entry is a zone that
-   restricts nothing — fallow stays green either way as long as nothing currently breaks a rule.
-   `apps/web/src/architecture/index.test.ts` is the trap for that: it asserts the rules the
-   conventions claim, so hollowing the config out is a red test rather than a quiet loss of
-   coverage. Rename the zones there too.
+`POST /api/news` — one question in, one digest out.
 
-Then `pnpm run verify` should be green. If it is not, a step above was missed — fix that rather
-than building on top of it.
+```jsonc
+// request
+{
+  "prompt": "что произошло с ценами на SSD за неделю",
+  "systemPrompt": "Пиши для инженера, без пресс-релизов.",   // optional
+  "tools": ["search_web", "read_page"],                       // optional, both by default
+  "maxSources": 8,                                            // optional, 1..20
+  "language": "ru"                                            // optional, else the prompt's own
+}
+```
+
+```jsonc
+// response
+{
+  "topic": "Цены на SSD, ноябрь 2026",
+  "summary": "…",
+  "keyPoints": ["…"],
+  "sources": [{ "url": "https://…", "title": "…", "snippet": "…", "read": true }],
+  "queries": ["ssd prices november 2026"],
+  "meta": { "model": "qwen3.8-flash-next", "steps": 5, "toolCalls": 6, "durationMs": 184000, "generatedAt": "…" }
+}
+```
+
+The schemas in `packages/shared` are the contract both sides compile against; the browser parses
+every response through them, so a service redeployed on its own fails loudly instead of rendering
+`undefined`.
+
+Failures are JSON too, and the status says who to blame: `400` a request the schema refused, `502`
+a search engine or a fetcher that failed, `504` a run the service stopped waiting for, `500` this
+process's own bug.
+
+## Packages
+
+| Package | Path | Role | Build |
+|---|---|---|---|
+| `@app/shared` | `packages/shared` | types + zod schemas used by both sides | none — `exports` points at `./src/index.ts` |
+| `@app/agent` | `packages/agent` | the LangGraph loop, its tools and its prompts | none — ships source |
+| `@app/api` | `apps/api` | Express service, one route | `tsup` → `dist/main.js` |
+| `@app/web` | `apps/web` | React SPA on Redux Toolkit + Saga | `vite build` → `dist/` |
+
+`web` never imports `agent`: LangGraph stays out of the bundle the browser downloads. The browser
+talks to the agent through HTTP and nothing else.
+
+## How the agent works
+
+```
+START → research ──tool call──▶ tools ──▶ research
+            │
+            └──no tool call───▶ write_digest → END
+```
+
+`research` asks the model with its tools bound; `tools` runs whatever it asked for and answers with
+a `ToolMessage` per call; the loop repeats until the model stops asking or `AGENT_MAX_STEPS` is
+reached. `write_digest` sits outside the loop on purpose — summarising inside it would let the
+model answer mid-search, which is the failure this shape exists to prevent. Its output is forced
+through a schema by `withStructuredOutput`.
+
+Two things the state keeps besides the transcript: the queries that were run, and the sources —
+search hits recorded as unread, pages that came back through the fetcher recorded as read. The
+bibliography is built from that record rather than from whatever the model chose to repeat.
+
+A URL the model cites that no tool ever returned is dropped from the answer. The prompt forbids
+inventing one, and a run that disobeyed that is exactly the run where the citation cannot be
+trusted.
+
+## Logging
+
+Every run writes its own story to stderr, and one id ties it together:
+
+```
+INFO  research requested requestId=demo-77 prompt="чем закончился запуск Starship" maxSources=2
+INFO  run started requestId=demo-77 runId=05ab2b2e tools=["search_web","read_page"]
+INFO  model asked for tools requestId=demo-77 runId=05ab2b2e step=3 requested=2 durationMs=7160
+INFO  tool call requestId=demo-77 runId=05ab2b2e tool=read_page url=https://… chars=73 truncated=false
+INFO  digest written requestId=demo-77 runId=05ab2b2e keyPoints=7 cited=5 durationMs=41865
+INFO  run finished requestId=demo-77 runId=05ab2b2e steps=8 toolCalls=14 sources=2 durationMs=100267
+INFO  request requestId=demo-77 method=POST path=/api/news status=200 durationMs=100280
+```
+
+That `chars=73` above is the reason the fields exist: the page came back, it was a cookie wall, and
+the run went on to answer from the other one. Without it a digest built on one real source and one
+empty page looks identical to one built on two real sources.
+
+- `LOG_LEVEL=debug` adds the health checks and the size of every model request; `LOG_FORMAT=json`
+  writes one object per line, with numbers still numbers.
+- The id arrives in the response header `x-request-id`, and an id the caller sent is kept rather than
+  replaced — quote either one and the lines are there.
+- Failures are logged where they are known, not only at the edge: `model did not answer`, `tool
+  failed`, `citations dropped` (the model named a URL no tool ever returned), `run failed` with the
+  failure kind the status is derived from.
+- Logs go to **stderr**. stdout belongs to whatever the process was asked to produce.
 
 ## Commands
 
@@ -76,8 +135,7 @@ Run from the repository root:
 
 ### The gate
 
-`pnpm run verify` is the single verification command. The `pre-commit` hook runs it, and
-`.forgejo/workflows/ci.yml` runs it on every push and pull request:
+`pnpm run verify` is the single verification command, and the `pre-commit` hook runs it:
 
 ```
 turbo run typecheck                types, per package
@@ -89,14 +147,13 @@ turbo run build                    tsup + vite build
 
 Green means types, style, structure, behaviour and both bundles all pass. Flags you add on the way
 are task-runner flags: `pnpm run verify --force` re-runs the tasks instead of replaying the
-Turborepo cache, which is the only way to watch the gate do the work rather than recall it.
-`commitlint` separately rejects commit messages that are not
+Turborepo cache. `commitlint` separately rejects commit messages that are not
 [Conventional Commits](https://www.conventionalcommits.org/).
 
-**A hook is not a gate.** `git commit --no-verify` skips it in one flag, so the workflow is what
-enforces and the hook is only the fast local pass. One setting lives outside the repository:
-require the `verify` check on `main` under branch protection, or a project copied from this
-template starts out unenforced all over again.
+**A hook is not a gate.** `git commit --no-verify` skips it in one flag, and nothing in this
+repository runs `verify` on a push yet: there is no pipeline here. Until `.github/workflows` exists,
+the hook is the only thing enforcing the gate — see [conventions/project.md](./conventions/project.md),
+"CI is not running".
 
 ## Layout
 
@@ -104,24 +161,25 @@ Inside every package, an entity is a **directory with an `index.ts`** — never 
 Which buckets a package has depends on its role:
 
 ```
-packages/shared/src/     types/ schemas/
-apps/api/src/            app/ routes/ services/          + main.ts
-apps/web/src/            api/ actions/ reducers/ sagas/
-                         store/ selectors/ hooks/ components/   + main.tsx
+packages/shared/src/   types/ schemas/
+packages/agent/src/    types/ errors/ schemas/ config/ logging/ bibliography/
+                       tools/ model/ state/ nodes/ edges/ graph/
+apps/api/src/          app/ middleware/ routes/ services/                + main.ts
+apps/web/src/          api/ actions/ reducers/ sagas/
+                       store/ selectors/ hooks/ components/           + main.tsx
 ```
 
 Layers only import leftwards, and fallow enforces it: one zone per bucket in `.fallowrc.json`, with
 `coverage.requireAllFiles` so a bucket no zone claims is a red gate instead of an unpoliced one.
-The rules that are calls rather than imports — reading the store with an inline `useSelector`,
-calling `fetch` outside `api/` — are covered by `boundaries.calls.forbidden`. In `apps/web` that
-means components reach state through a hook, never through a reducer; sagas dispatch slice actions,
-the UI never does.
+`apps/web/src/architecture/index.test.ts` asserts the rules themselves, so deleting one is a red
+test rather than a quiet loss of coverage.
 
 ## Stack
 
 TypeScript 7 · pnpm workspaces + Turborepo · Biome · Vitest + Testing Library · fallow
 React 19 · Redux Toolkit + Redux Saga · styled-components · Vite
 Express 5 · tsup · zod
+LangChain / LangGraph 1 · `@langchain/openai` against an OpenAI-compatible endpoint
 
 Shared dependency versions live once in the pnpm `catalog:` in `pnpm-workspace.yaml`. No package
 hard-codes a version.
@@ -141,17 +199,6 @@ several of the rules exist because the toolchain caught the alternative.
 
 ## Skills
 
-`new-package` ships with the project at `.claude/skills/new-package/`. Use it when adding a package
-rather than improvising — it carries the rules that fail silently, such as script names having to
-match the Turborepo tasks.
-
-`.agents/skills/new-package` is a **symlink** to the same directory, so agents that read the neutral
-path find it too. There is one copy of the instructions, never two to keep in step.
-
-> On Windows, git only materialises symlinks with `core.symlinks=true` and Developer Mode enabled.
-> Without them the checkout contains a text file holding the target path, and the skill silently
-> fails to load. Either turn both on, or delete `.agents/` and keep only the Claude Code path.
-
-The skill for starting a *new* project from this template lives in
-[ts-scaffold-skills](https://github.com/shushanskii/ts-scaffold-skills) — it cannot ship here,
-because it runs before the project exists.
+`new-package` ships with the project at `.claude/skills/new-package/`, with `.agents/skills/new-package`
+a symlink to the same directory. Use it when adding a package rather than improvising — it carries
+the rules that fail silently, such as script names having to match the Turborepo tasks.

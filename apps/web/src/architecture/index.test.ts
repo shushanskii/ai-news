@@ -66,8 +66,30 @@ const WEB_LAYERS = [
   "web-entry",
 ] as const;
 
-const API_LAYERS = ["api-services", "api-routes", "api-app", "api-entry"] as const;
+const API_LAYERS = [
+  "api-services",
+  "api-routes",
+  "api-middleware",
+  "api-app",
+  "api-entry",
+] as const;
 const SHARED_LAYERS = ["shared-types", "shared-schemas", "shared-barrel"] as const;
+// The agent's own layer order, left to right, as conventions/project.md records it.
+const AGENT_LAYERS = [
+  "agent-types",
+  "agent-errors",
+  "agent-schemas",
+  "agent-config",
+  "agent-logging",
+  "agent-bibliography",
+  "agent-tools",
+  "agent-model",
+  "agent-state",
+  "agent-nodes",
+  "agent-edges",
+  "agent-graph",
+  "agent-barrel",
+] as const;
 
 // A zone listed under `calls.forbidden` for one of these callees may not call it.
 function isCallForbidden(from: string, callee: string): boolean {
@@ -84,7 +106,7 @@ function isCallForbidden(from: string, callee: string): boolean {
 
 describe("fallow boundary config", () => {
   it("declares a zone for every layer the conventions name", () => {
-    for (const name of [...WEB_LAYERS, ...API_LAYERS, ...SHARED_LAYERS]) {
+    for (const name of [...WEB_LAYERS, ...API_LAYERS, ...SHARED_LAYERS, ...AGENT_LAYERS]) {
       expect(zones.has(name), `missing zone: ${name}`).toBe(true);
     }
   });
@@ -130,6 +152,47 @@ describe("fallow boundary config", () => {
         expect(isAllowed(from, to), `${from} may import ${to}`).toBe(false);
       }
     }
+
+    // `agent-barrel` sits at the right end of the list, so a rule that let a bucket import it would
+    // be a rule that let every bucket import the whole package.
+    for (const [index, from] of AGENT_LAYERS.entries()) {
+      for (const to of AGENT_LAYERS.slice(index + 1)) {
+        expect(isAllowed(from, to), `${from} may import ${to}`).toBe(false);
+      }
+    }
+  });
+
+  it("keeps the agent out of the browser", () => {
+    // conventions/project.md: the agent runs in the service. Nothing in `web` may reach it, not
+    // even its barrel — that is what keeps LangGraph out of the bundle the browser downloads.
+    for (const from of WEB_LAYERS) {
+      for (const to of AGENT_LAYERS) {
+        expect(isAllowed(from, to), `${from} may import ${to}`).toBe(false);
+      }
+    }
+
+    for (const from of AGENT_LAYERS) {
+      for (const to of [...WEB_LAYERS, ...API_LAYERS]) {
+        expect(isAllowed(from, to), `${from} may import ${to}`).toBe(false);
+      }
+    }
+  });
+
+  it("lets the service reach the agent only through its barrel", () => {
+    expect(isAllowed("api-services", "agent-barrel")).toBe(true);
+    expect(isAllowed("api-routes", "agent-barrel")).toBe(true);
+    // The entry point names the agent because that is where it gets wired into the service.
+    expect(isAllowed("api-entry", "agent-barrel")).toBe(true);
+
+    for (const from of API_LAYERS) {
+      for (const to of AGENT_LAYERS) {
+        if (to === "agent-barrel") {
+          continue;
+        }
+
+        expect(isAllowed(from, to), `${from} may import ${to}`).toBe(false);
+      }
+    }
   });
 
   it("keeps the three packages apart", () => {
@@ -157,6 +220,16 @@ describe("fallow boundary config", () => {
 
     expect(isAllowed("web-components", "shared-barrel")).toBe(true);
     expect(isAllowed("api-routes", "shared-barrel")).toBe(true);
+  });
+
+  it("gives the logger no way out and the middleware no way into a route", () => {
+    // `agent-logging` is a leaf so that every bucket may use it, and `api-middleware` reaches the
+    // service only by handing routes a logger — never by importing them.
+    expect(isAllowed("agent-logging", "agent-config")).toBe(false);
+    expect(isAllowed("api-middleware", "api-routes")).toBe(false);
+    expect(isAllowed("api-middleware", "api-services")).toBe(false);
+    expect(isAllowed("api-app", "api-middleware")).toBe(true);
+    expect(isAllowed("api-routes", "api-middleware")).toBe(false);
   });
 
   it("keeps tests inside their own package", () => {

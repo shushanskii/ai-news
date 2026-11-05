@@ -1,54 +1,89 @@
-import { useEffect } from "react";
 import styled from "styled-components";
-import { TodoForm } from "#components/TodoForm";
-import { TodoList } from "#components/TodoList";
-import { useTodos } from "#hooks/useTodos";
+import { ResearchForm } from "#components/ResearchForm";
+import { ResultJson } from "#components/ResultJson";
+import { SourceList } from "#components/SourceList";
+import { SummaryCard } from "#components/SummaryCard";
+import { useNews } from "#hooks/useNews";
 
-// The one element that is layout rather than domain: a column that holds the form, the counter and
-// the list together. Everything it styles is a child's problem in its own component.
 const Page = styled.main`
   background-color: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  display: grid;
+  gap: 20px;
   margin: 40px auto;
-  max-width: 640px;
+  max-width: 760px;
   padding: 24px 28px 32px;
 `;
 
-export function App() {
-  const { todos, remaining, loading, error, filter, actions } = useTodos();
+const Title = styled.h1`
+  font-size: 20px;
+  margin: 0;
+`;
 
-  useEffect(() => {
-    actions.load();
-  }, [actions]);
+const Lead = styled.p`
+  color: #6b7280;
+  font-size: 13px;
+  margin: -12px 0 0;
+`;
 
-  // The control reads its own state back through the hook, so a reload from elsewhere cannot leave
-  // the button saying the opposite of what is on screen.
-  const overdue = filter.overdue === true;
+const Running = styled.p`
+  color: #4b5563;
+  margin: 0;
+`;
 
-  function handleToggleOverdue() {
-    actions.load(overdue ? {} : { overdue: true });
+const Answer = styled.div`
+  display: grid;
+  gap: 18px;
+`;
+
+const Reset = styled.button`
+  background-color: #ffffff;
+  border: 1px solid #d6dae1;
+  color: #4b5563;
+  justify-self: start;
+
+  &:hover:not(:disabled) {
+    background-color: #f9fafb;
   }
+`;
 
-  if (loading) {
-    return (
-      <Page>
-        <p>Loading…</p>
-      </Page>
-    );
+export function App() {
+  const { result, running, error, actions } = useNews();
+
+  function handleReset() {
+    actions.reset();
   }
 
   return (
     <Page>
-      <TodoForm onSubmit={actions.create} />
+      <Title>Новости по теме</Title>
+      <Lead>
+        Агент ищет в интернете, открывает страницы и пишет сводку по тому, что на них написано.
+        Поиск занимает минуты, а не секунды.
+      </Lead>
+
+      <ResearchForm onSubmit={actions.research} running={running} />
+
       {error === undefined ? null : <p role="alert">{error}</p>}
-      <button onClick={handleToggleOverdue} type="button">
-        {overdue ? "show all" : "show overdue"}
-      </button>
-      {/* `remaining` counts what is on screen, so under the filter that number is not "left". */}
-      <p>{overdue ? `${todos.length} overdue` : `${remaining} left`}</p>
-      <TodoList onRemove={actions.remove} onToggle={actions.toggle} todos={todos} />
+      {running ? <Running>Ищу: поиск, чтение страниц, потом сводка.</Running> : null}
+
+      {result === undefined ? null : (
+        <Answer>
+          <SummaryCard
+            keyPoints={result.keyPoints}
+            meta={result.meta}
+            summary={result.summary}
+            topic={result.topic}
+          />
+          <SourceList sources={result.sources} />
+          <ResultJson result={result} />
+          <Reset onClick={handleReset} type="button">
+            Убрать результат
+          </Reset>
+        </Answer>
+      )}
     </Page>
   );
 }

@@ -1,0 +1,164 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SummaryCard > leaves the findings list out when there are none 1`] = `
+<DocumentFragment>
+  <section
+    aria-label="Сводка"
+    class="sc-bcHNtg hWeBhJ"
+    role="region"
+  >
+    <h2
+      class="sc-gsMGyr fmBCUB"
+    >
+      Пусто
+    </h2>
+    <p
+      class="sc-dkHxwO fFLRMv"
+    >
+      Ничего не нашлось.
+    </p>
+    <dl
+      class="sc-jTkVfb cFcSbh"
+    >
+      <div
+        class="sc-gLfMdy bFFgUK"
+        title="Модель, которая писала сводку"
+      >
+        <span>
+          модель
+        </span>
+        <strong
+          class="sc-iBIXdp jwNRdB"
+        >
+          qwen3.8-flash-next
+        </strong>
+      </div>
+      <div
+        class="sc-gLfMdy bFFgUK"
+        title="Шагов модели"
+      >
+        <span>
+          шагов
+        </span>
+        <strong
+          class="sc-iBIXdp jwNRdB"
+        >
+          4
+        </strong>
+      </div>
+      <div
+        class="sc-gLfMdy bFFgUK"
+        title="Вызовов инструментов"
+      >
+        <span>
+          запросов
+        </span>
+        <strong
+          class="sc-iBIXdp jwNRdB"
+        >
+          7
+        </strong>
+      </div>
+      <div
+        class="sc-gLfMdy bFFgUK"
+        title="Сколько длился поиск"
+      >
+        <span>
+          время
+        </span>
+        <strong
+          class="sc-iBIXdp jwNRdB"
+        >
+          12 с
+        </strong>
+      </div>
+    </dl>
+  </section>
+</DocumentFragment>
+`;
+
+exports[`SummaryCard > shows the answer and how it was produced 1`] = `
+<DocumentFragment>
+  <section
+    aria-label="Сводка"
+    class="sc-bcHNtg hWeBhJ"
+    role="region"
+  >
+    <h2
+      class="sc-gsMGyr fmBCUB"
+    >
+      Батареи для сетей
+    </h2>
+    <p
+      class="sc-dkHxwO fFLRMv"
+    >
+      За месяц объявили о двух пилотах.
+    </p>
+    <ul
+      class="sc-hLllbt iDAvpm"
+    >
+      <li
+        class="sc-eDgbZQ loiSA"
+      >
+        Один завод запланирован на 2027 год.
+      </li>
+    </ul>
+    <dl
+      class="sc-jTkVfb cFcSbh"
+    >
+      <div
+        class="sc-gLfMdy bFFgUK"
+        title="Модель, которая писала сводку"
+      >
+        <span>
+          модель
+        </span>
+        <strong
+          class="sc-iBIXdp jwNRdB"
+        >
+          qwen3.8-flash-next
+        </strong>
+      </div>
+      <div
+        class="sc-gLfMdy bFFgUK"
+        title="Шагов модели"
+      >
+        <span>
+          шагов
+        </span>
+        <strong
+          class="sc-iBIXdp jwNRdB"
+        >
+          4
+        </strong>
+      </div>
+      <div
+        class="sc-gLfMdy bFFgUK"
+        title="Вызовов инструментов"
+      >
+        <span>
+          запросов
+        </span>
+        <strong
+          class="sc-iBIXdp jwNRdB"
+        >
+          7
+        </strong>
+      </div>
+      <div
+        class="sc-gLfMdy bFFgUK"
+        title="Сколько длился поиск"
+      >
+        <span>
+          время
+        </span>
+        <strong
+          class="sc-iBIXdp jwNRdB"
+        >
+          12 с
+        </strong>
+      </div>
+    </dl>
+  </section>
+</DocumentFragment>
+`;
