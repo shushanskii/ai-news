@@ -1,0 +1,28 @@
+# The build context travels through the Docker daemon's API on every build, so this file is what
+# keeps a build from shipping the development machine inside it. node_modules alone is hundreds of
+# megabytes, and the builder stage installs its own from the lockfile — the copied one would only
+# be ignored later, after the cost of transferring it.
+
+# Dependencies and build output: both are produced inside the image.
+node_modules
+**/node_modules
+dist
+**/dist
+.turbo
+**/.turbo
+
+# Tool caches and reports that no build reads.
+.fallow
+**/.fallow
+report.md
+review.md
+conventions
+
+# Editors, agents and the repository itself. `.git` is not read by a build step: the image revision
+# arrives as a build label, not from `git rev-parse`.
+.git
+.idea
+.junie
+.claude
+.agents
+.vscode

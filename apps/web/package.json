@@ -1,0 +1,44 @@
+{
+  "name": "@app/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#actions/*": "./src/actions/*/index.ts",
+    "#api/*": "./src/api/*/index.ts",
+    "#components/*": "./src/components/*/index.tsx",
+    "#hooks/*": "./src/hooks/*/index.ts",
+    "#reducers/*": "./src/reducers/*/index.ts",
+    "#sagas/*": "./src/sagas/*/index.ts",
+    "#selectors/*": "./src/selectors/*/index.ts",
+    "#store": "./src/store/index.ts"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@app/shared": "workspace:*",
+    "@reduxjs/toolkit": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-redux": "catalog:",
+    "redux-saga": "catalog:",
+    "styled-components": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "jest-styled-components": "catalog:",
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

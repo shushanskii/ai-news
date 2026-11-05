@@ -1,0 +1,141 @@
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  "boundaries": {
+    "zones": [
+      {
+        "name": "shared-test",
+        "patterns": ["packages/shared/src/**/*.test.ts"]
+      },
+      {
+        "name": "api-test",
+        "patterns": ["apps/api/src/**/*.test.ts"]
+      },
+      {
+        "name": "web-test",
+        "patterns": ["apps/web/src/**/*.test.ts", "apps/web/src/**/*.test.tsx"]
+      },
+
+      { "name": "shared-types", "patterns": ["packages/shared/src/types/**"] },
+      { "name": "shared-schemas", "patterns": ["packages/shared/src/schemas/**"] },
+      { "name": "shared-barrel", "patterns": ["packages/shared/src/index.ts"] },
+
+      { "name": "api-services", "patterns": ["apps/api/src/services/**"] },
+      { "name": "api-routes", "patterns": ["apps/api/src/routes/**"] },
+      { "name": "api-app", "patterns": ["apps/api/src/app/**"] },
+      { "name": "api-entry", "patterns": ["apps/api/src/main.ts"] },
+
+      { "name": "web-api", "patterns": ["apps/web/src/api/**"] },
+      { "name": "web-actions", "patterns": ["apps/web/src/actions/**"] },
+      { "name": "web-reducers", "patterns": ["apps/web/src/reducers/**"] },
+      { "name": "web-sagas", "patterns": ["apps/web/src/sagas/**"] },
+      { "name": "web-store", "patterns": ["apps/web/src/store/**"] },
+      { "name": "web-selectors", "patterns": ["apps/web/src/selectors/**"] },
+      { "name": "web-hooks", "patterns": ["apps/web/src/hooks/**"] },
+      { "name": "web-components", "patterns": ["apps/web/src/components/**"] },
+      { "name": "web-entry", "patterns": ["apps/web/src/main.tsx"] },
+
+      { "name": "repo-tooling", "patterns": ["scripts/**"] }
+    ],
+    "rules": [
+      {
+        "from": "shared-test",
+        "allow": ["shared-types", "shared-schemas", "shared-barrel"]
+      },
+      {
+        "from": "api-test",
+        "allow": ["api-services", "api-routes", "api-app", "api-entry", "shared-barrel"]
+      },
+      {
+        "from": "web-test",
+        "allow": [
+          "web-api",
+          "web-actions",
+          "web-reducers",
+          "web-sagas",
+          "web-store",
+          "web-selectors",
+          "web-hooks",
+          "web-components",
+          "web-entry",
+          "shared-barrel"
+        ]
+      },
+
+      { "from": "shared-types", "allow": [] },
+      { "from": "shared-schemas", "allow": ["shared-types"] },
+      { "from": "shared-barrel", "allow": ["shared-types", "shared-schemas"] },
+
+      { "from": "api-services", "allow": ["shared-barrel"] },
+      { "from": "api-routes", "allow": ["api-services", "shared-barrel"] },
+      { "from": "api-app", "allow": ["api-routes", "api-services", "shared-barrel"] },
+      { "from": "api-entry", "allow": ["api-app", "api-routes", "api-services", "shared-barrel"] },
+
+      { "from": "web-api", "allow": ["shared-barrel"] },
+      { "from": "web-actions", "allow": ["shared-barrel"] },
+      { "from": "web-reducers", "allow": ["shared-barrel"] },
+      {
+        "from": "web-sagas",
+        "allow": ["web-api", "web-actions", "web-reducers", "shared-barrel"]
+      },
+      { "from": "web-store", "allow": ["web-reducers", "web-sagas", "shared-barrel"] },
+      { "from": "web-selectors", "allow": ["web-store", "web-actions", "shared-barrel"] },
+      {
+        "from": "web-hooks",
+        "allow": ["web-selectors", "web-store", "web-actions", "shared-barrel"]
+      },
+      { "from": "web-components", "allow": ["web-hooks", "web-components", "shared-barrel"] },
+      {
+        "from": "web-entry",
+        "allow": ["web-components", "web-store", "web-sagas", "shared-barrel"]
+      },
+
+      { "from": "repo-tooling", "allow": [] }
+    ],
+    "coverage": {
+      "requireAllFiles": true,
+      "allowUnmatched": [
+        "apps/api/tsup.config.ts",
+        "apps/web/vite.config.ts",
+        "apps/web/vitest.config.ts",
+        "apps/web/vitest.setup.ts",
+        "apps/web/index.html"
+      ]
+    },
+    "calls": {
+      "forbidden": [
+        {
+          "from": "web-components",
+          "callee": ["useSelector", "useDispatch", "fetch"]
+        },
+        {
+          "from": "web-selectors",
+          "callee": "fetch"
+        },
+        {
+          "from": "web-reducers",
+          "callee": "fetch"
+        },
+        {
+          "from": "web-actions",
+          "callee": "fetch"
+        },
+        {
+          "from": "web-sagas",
+          "callee": "fetch"
+        },
+        {
+          "from": "web-store",
+          "callee": "fetch"
+        },
+        {
+          "from": "web-hooks",
+          "callee": "fetch"
+        },
+        {
+          "from": "web-entry",
+          "callee": "fetch"
+        }
+      ]
+    }
+  }
+}

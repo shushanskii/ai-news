@@ -1,0 +1,73 @@
+# syntax=docker/dockerfile:1
+
+# The API image. Three stages, because pnpm and a runnable bundle want different things:
+#
+#   deps     the production dependency tree, resolved from pnpm-lock.yaml and nothing else
+#   build    the full workspace, needed because tsup bundles @app/shared into dist/main.js
+#   runtime  the two trees laid back over each other
+#
+# Why deps is a stage of its own rather than a copy of the build stage's node_modules: pnpm links a
+# workspace package's dependencies as *relative* symlinks into the workspace root's store
+# (apps/api/node_modules/express -> ../../../node_modules/.pnpm/express@5.3.0/node_modules/express).
+# Copying apps/api/node_modules out of a tree therefore produces an image that starts with
+# ERR_MODULE_NOT_FOUND — the link survives, its target does not. Carrying /ws whole from a stage
+# that installed with --prod keeps every link pointing somewhere, at 10 MB.
+#
+# Why not `pnpm deploy`: from pnpm 10 it only works on workspaces with inject-workspace-packages,
+# which would change the lockfile for everyone.
+
+# ---- deps: production dependencies only --------------------------------------------------------
+FROM node:22-alpine AS deps
+WORKDIR /ws
+# The version comes from `packageManager` in package.json, so a build cannot drift onto a pnpm that
+# writes a different lockfile. The prompt is off because a build has no terminal to answer it in.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+# Only manifests: the dependency graph is decided by the lockfile, not by any source file, so this
+# layer is rebuilt when a dependency changes and not when a comment does.
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/shared/package.json packages/shared/
+COPY apps/api/package.json apps/api/
+# --ignore-scripts because the root manifest carries `prepare: husky`, and husky is a root
+# devDependency that --prod does not install: the script then fails the install with
+# `sh: husky: command not found`. Nothing in this dependency set has a build step to lose —
+# express and zod ship plain JavaScript.
+RUN pnpm install --frozen-lockfile --prod --filter @app/api --ignore-scripts
+
+# ---- build: the whole workspace ----------------------------------------------------------------
+# Debian here on purpose: it is the base the CI gate runs on, so the bundle that lands in the image
+# is produced by the toolchain that tested it. The stages that only carry files — deps and runtime —
+# are Alpine to keep the shipped image small, and that is safe while nothing in the runtime tree is
+# compiled. express and zod are the whole set; a native dependency turns these two bases from a free
+# choice into a decision.
+FROM node:22 AS build
+WORKDIR /ws
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY packages/shared/package.json packages/shared/tsconfig.json packages/shared/
+COPY apps/api/package.json apps/api/tsconfig.json apps/api/tsup.config.ts apps/api/
+COPY packages/shared/src packages/shared/src
+COPY apps/api/src apps/api/src
+# Scripts on here, unlike in deps: esbuild arrives through a build script and tsup is nothing
+# without it. pnpm allows it because `allowBuilds` in pnpm-workspace.yaml says so.
+RUN pnpm install --frozen-lockfile
+# test -f is not paranoia. `pnpm --filter <name>` matches nothing and exits 0 when the name is
+# misspelled, so without this line a typo produces a successful build of an image with no code in
+# it, and the failure surfaces later as a pod that restarts for reasons nobody can read.
+RUN pnpm --filter @app/api run build \
+ && test -f apps/api/dist/main.js
+
+# ---- runtime -----------------------------------------------------------------------------------
+FROM node:22-alpine
+WORKDIR /ws/apps/api
+COPY --from=deps /ws /ws
+COPY --from=build /ws/apps/api/dist /ws/apps/api/dist
+# NODE_ENV=production is the difference between the seeded demo list and an empty one: main.ts seeds
+# todos only when it is not production. A freshly deployed API therefore answers `[]`, which is
+# correct and reads like a bug — the comment in main.ts is the other half of this one.
+ENV NODE_ENV=production \
+    PORT=3000
+EXPOSE 3000
+USER node
+CMD ["node", "/ws/apps/api/dist/main.js"]

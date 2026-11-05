@@ -1,0 +1,73 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TodoForm > ignores a blank title 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-bcHNtg gaKWqh"
+  >
+    <input
+      aria-label="new todo"
+      placeholder="what needs doing?"
+      value="   "
+    />
+    <input
+      aria-label="due date"
+      type="date"
+      value=""
+    />
+    <button
+      type="submit"
+    >
+      add
+    </button>
+  </form>
+</DocumentFragment>
+`;
+
+exports[`TodoForm > sends the due date with the title and clears both 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-bcHNtg gaKWqh"
+  >
+    <input
+      aria-label="new todo"
+      placeholder="what needs doing?"
+      value=""
+    />
+    <input
+      aria-label="due date"
+      type="date"
+      value=""
+    />
+    <button
+      type="submit"
+    >
+      add
+    </button>
+  </form>
+</DocumentFragment>
+`;
+
+exports[`TodoForm > submits the title and clears the input 1`] = `
+<DocumentFragment>
+  <form
+    class="sc-bcHNtg gaKWqh"
+  >
+    <input
+      aria-label="new todo"
+      placeholder="what needs doing?"
+      value=""
+    />
+    <input
+      aria-label="due date"
+      type="date"
+      value=""
+    />
+    <button
+      type="submit"
+    >
+      add
+    </button>
+  </form>
+</DocumentFragment>
+`;

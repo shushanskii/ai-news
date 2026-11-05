@@ -1,0 +1,99 @@
+# The static bundle and the Caddy that serves it (Dockerfile.web, deploy/Caddyfile).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app.kubernetes.io/name: ts-scaffold
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: ts-scaffold
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ts-scaffold
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ts-scaffold
+        app.kubernetes.io/component: web
+    spec:
+      # fsGroup is what makes the two emptyDir volumes below writable by uid 101: kubelet chowns the
+      # volume's group and sets the sticky bit, which is the only way an emptyDir becomes usable by a
+      # uid the image does not name in /etc/passwd.
+      securityContext:
+        fsGroup: 101
+      containers:
+        - name: web
+          image: git.rezolver-zero.com/developer/ts-scaffolding/web:gadbb33f1
+          ports:
+            - name: http
+              containerPort: 8080
+          # The probe asks for /, which is index.html: an HTTP response from the file server is the
+          # readiness this container has — there is no dependency to wait for.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          securityContext:
+            # The image is built non-root (Dockerfile.web: it strips the file capability the official
+            # Caddy binary ships with, which is what made a hardened container impossible to start),
+            # so every hardening line here is a plain assertion rather than a negotiation:
+            # runAsNonRoot needs a numeric user to verify, and `drop: ["ALL"]` no longer has a
+            # file-capability binary to refuse. Reproduce the old failure on an unstripped image:
+            # docker run --rm --cap-drop ALL --entrypoint caddy <image> version — EPERM, and
+            # `--cap-add NET_BIND_SERVICE` is what made it print a version.
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            # Caddy's certificate storage and its autosave file. Both are written on startup even
+            # though this container serves static files over TLS that ended somewhere else: the
+            # storage is opened before the first request is routed, and the autosave attempt logs an
+            # error line on every start if /config is read-only — an error that means nothing and
+            # would be chased by whoever reads the log next.
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config/caddy
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 64Mi
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    app.kubernetes.io/name: ts-scaffold
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: ts-scaffold
+spec:
+  selector:
+    app.kubernetes.io/name: ts-scaffold
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

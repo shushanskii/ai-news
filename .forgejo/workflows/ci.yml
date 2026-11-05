@@ -1,0 +1,176 @@
+name: CI
+
+# The gate has to run somewhere a commit cannot skip it. `pre-commit` is still the fast local
+# pass, but `git commit --no-verify` gets around it in one flag, so this file is the enforcement
+# and the hook is a convenience.
+#
+# One verify job, full run, always. Three packages, ~40 tests, two small bundles: filtering to
+# affected packages would cost a fetch-depth, a base ref and a way to be falsely green, and buy
+# seconds.
+#
+# Actions are named by full URL on purpose. A relative `uses: actions/checkout@v7` is resolved
+# against the instance's default actions URL — <https://code.forgejo.org> on a stock Forgejo, not
+# github.com — and that mirror does not carry `pnpm/setup`; it fails with a clone error rather
+# than falling back. Forgejo's own docs recommend fully qualified URLs for the same reason, and
+# the instance this runs on documents the same convention.
+#
+# What this file still cannot prove about its own infrastructure: that a job container reaches
+# registry.npmjs.org (the first `Install` step is the evidence), and that the registry credential
+# may write packages (the `image` job's push is the evidence). Pulling `node:22` and cloning
+# fully qualified actions were proven by runs on 2026-10-20.
+
+on:
+  # `main` only. A branch push that builds an image produces a tag for a commit that may never land,
+  # and every such tag is two images on the host that runs the registry; pull requests are gated by
+  # the trigger below, so a branch still gets its verify run before anything merges.
+  push:
+    branches: [main]
+    # Neither a README nor a cluster manifest changes what goes into an image, and one build
+    # publishes two of them onto the host that stores them. `deploy/` is deliberately absent from
+    # this list: the web image copies deploy/Caddyfile into itself, so a change there is a change to
+    # an image and has to build. `.forgejo/` is present because this file changes what runs, never
+    # what is compiled — a commit that only edits the pipeline should not cost 350 MB.
+    paths-ignore:
+      - "k8s/**"
+      - "**.md"
+      - ".forgejo/**"
+  pull_request:
+  # Manual run from the Actions UI, or POST /repos/{owner}/{repo}/actions/workflows/{name}/dispatches.
+  # This one stays after the test: it is how a registry push gets retried without an empty commit,
+  # and how a branch that is not `main` builds an image on purpose.
+  workflow_dispatch:
+
+# Least privilege: the workflow reads the repository and nothing else. No secret is reachable
+# from a fork pull request.
+permissions:
+  contents: read
+
+# A push to a branch that already has a run in flight makes that run worthless. The group names
+# the workflow in words: `github.workflow` is not among the contexts Forgejo documents, and an
+# unknown context expands to nothing rather than failing, which would quietly merge every
+# workflow's runs into one group.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Branch protection on `main` should require this exact check name: `verify`. It is the one
+  # setting that cannot be committed — see README, "The gate".
+  verify:
+    name: verify
+    # This instance has one runner and one label: `docker:docker://alpine:3.22`. A job asking for
+    # `ubuntu-latest` does not get a renamable alias, it gets no answer at all and waits forever.
+    # The label only names a default image, so the job names the image it actually needs: Alpine
+    # carries neither git nor node, and checkout needs the first before any project step runs.
+    runs-on: docker
+    container:
+      image: node:22
+    steps:
+      - uses: https://github.com/actions/checkout@v7
+        with:
+          # Nothing in this workflow writes back to git. The `image` job pushes to the container
+          # registry, which authenticates with its own secret, so a git credential in the runner
+          # would be a permission nothing here needs.
+          persist-credentials: false
+
+      # Installs pnpm at the version in `packageManager` (pnpm@11.11.0) and caches the pnpm store
+      # against the lockfile hash. The image already brings node, but the action pins its own
+      # runtime (`runtime: node@22`), which keeps the version the same here and on any machine
+      # that runs this workflow outside the container. `install: false` keeps the install below
+      # explicit, so `--frozen-lockfile` stays a visible step rather than an action default. If
+      # the instance has no actions cache backend, this step warns and carries on.
+      - uses: https://github.com/pnpm/setup@v3
+        with:
+          runtime: node@22
+          cache: true
+          install: false
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # A lockfile that has drifted back into duplicate versions is a bug, and the only cheap
+      # way to notice is to ask on every run.
+      - name: Lockfile is deduplicated
+        run: pnpm dedupe --check
+
+      # `--force` so a run proves the code builds and tests rather than replaying a cache hit.
+      # Nothing caches .turbo here, so this costs seconds and removes a class of false green.
+      - name: Verify
+        run: pnpm run verify --force
+
+      # Advisory noise must not block an unrelated pull request — a transitive dev dependency
+      # lands on everyone at once. So it reports, and does not decide.
+      - name: Dependency advisories
+        run: pnpm audit --audit-level=high --ignore-registry-errors
+        continue-on-error: true
+
+  # Two images come out of a green gate: the API and the thing that serves the bundle. Neither is
+  # deployed from here. What a cluster consumes is a commit in the manifests repository, and an
+  # image with no reference pointing at it is just a thing that exists — so this job stops at the
+  # registry and leaves the deploy to the pull request that names the tag.
+  image:
+    name: image
+    needs: verify
+    # Everything except a pull request: a PR would build an image whose commit may never land, and
+    # the tag would then belong to nothing. Manual dispatch stays allowed.
+    # `github.event_name` is unproven on this instance — a PR run that shows this job as anything
+    # but skipped means the context is empty and the condition never restricted anything.
+    if: github.event_name != 'pull_request'
+    runs-on: docker
+    container:
+      # The label's default image is Alpine with neither docker nor node, and this job needs both —
+      # plus the git the first step installs. `docker_host: automount` in the runner config puts the
+      # host daemon's socket into the job.
+      image: docker:28
+    env:
+      REGISTRY: git.rezolver-zero.com
+      # The forge accepts only names that begin with the authenticated owner, and the repository
+      # segment is what makes the package appear in this repository's Packages tab on its own.
+      IMAGE_PREFIX: git.rezolver-zero.com/developer/ts-scaffolding
+    steps:
+      # Node and git, before anything asks for them. `actions/checkout` is a JavaScript action and the
+      # runner executes it with the **job container's** node, so the container has to own node before
+      # the checkout step runs: with only the docker CLI in the image the failure lands inside the
+      # checkout itself — `exec: "node": executable file not found in $PATH`, and the runner's hint
+      # points at act issue 107. git is what checkout clones with; without it the action falls back
+      # to a tarball download that quietly leaves no .git behind.
+      - name: Toolchain for the checkout action
+        run: apk add --no-cache git nodejs
+
+      - uses: https://github.com/actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Login
+        # Credentials arrive as env, not as command-line arguments: a token in `docker login -p`
+        # is a token in the process list of the host running the daemon.
+        run: echo "$REGISTRY_TOKEN" | docker login -u "$REGISTRY_USERNAME" --password-stdin "$REGISTRY"
+        env:
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Build and push
+        # POSIX only: the runner prefers bash when the image has it, and this one does not, so the
+        # steps get `/bin/sh` from Alpine — no `${VAR:0:8}`, no brace expansion, no `set -o
+        # pipefail`.
+        run: |
+          set -eu
+          tag=g$(printf '%s' "$GITHUB_SHA" | cut -c1-8)
+          for target in api web; do
+            image="$IMAGE_PREFIX/$target"
+            # The context is the repository root because @app/shared is a workspace member: an
+            # image built from apps/api alone cannot resolve it.
+            docker build \
+              --file "Dockerfile.$target" \
+              --platform linux/amd64 \
+              --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+              --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+              --tag "$image:$tag" \
+              .
+            docker push "$image:$tag"
+            echo "pushed $image:$tag"
+          done
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}

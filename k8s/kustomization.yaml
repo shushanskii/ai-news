@@ -1,0 +1,16 @@
+# The cluster stack of this project: two Deployments, two Services, one Ingress.
+#
+# Nothing here names a namespace. The Application in the platform repository owns the destination
+# namespace and creates it (`CreateNamespace=true`), and a `namespace:` in this file would be a
+# second answer to "where does this run" — the two drift the moment someone moves the app.
+#
+# This directory is applied by Argo CD, never by hand: `kubectl apply -k k8s` from a laptop writes
+# around the GitOps loop instead of through it.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - api.yaml
+  - web.yaml
+  - ingress.yaml

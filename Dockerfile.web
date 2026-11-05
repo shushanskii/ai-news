@@ -1,0 +1,65 @@
+# syntax=docker/dockerfile:1
+
+# The web image: a Vite bundle and something to serve it with.
+#
+# `vite build` produces files, not a process — index.html plus one hashed chunk. Files need a
+# server to become HTTP responses, and in this cluster every responder is a container, so the
+# runtime stage is a web server image with the bundle dropped into it. Traefik routes requests to
+# the pod; it does not read files off a disk.
+#
+# The server is Caddy because the gateway already runs Caddy, so the two places a request is routed
+# speak one syntax. nginx-unprivileged would be an equally correct choice, at the cost of a second
+# config language in the lab and the gain of running as uid 101 without asking.
+
+# ---- build -------------------------------------------------------------------------------------
+FROM node:22 AS build
+WORKDIR /ws
+# The version comes from `packageManager`; no terminal to ask before downloading it.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+# @app/shared is published as raw TypeScript (its exports field points at ./src/index.ts), so the
+# builder needs its sources, not only its manifest — this is the same reason the API bundles it.
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY packages/shared/package.json packages/shared/tsconfig.json packages/shared/
+COPY apps/web/package.json apps/web/tsconfig.json apps/web/vite.config.ts apps/web/index.html apps/web/
+# A directory source of COPY contributes its contents, not itself: merging this line into the COPY
+# above drops shared's sources into packages/shared/ instead of packages/shared/src/, and the
+# bundler then reports `failed to resolve import "@app/shared"` — three layers from the cause.
+COPY packages/shared/src packages/shared/src
+COPY apps/web/src apps/web/src
+RUN pnpm install --frozen-lockfile
+# The assertion belongs here for the same reason it does in Dockerfile.api: a `--filter` that matches
+# nothing exits 0.
+RUN pnpm --filter @app/web run build \
+ && test -f apps/web/dist/index.html
+
+# ---- runtime -----------------------------------------------------------------------------------
+FROM caddy:alpine
+# The official image's binary carries one file capability: `getcap /usr/bin/caddy` answers
+# `cap_net_bind_service=ep`. That xattr is what keeps a container from being hardened — a binary
+# whose file capabilities name something outside the process's bounding set is not executed at all
+# (`execve` answers EPERM, and a pod reports `exec /usr/bin/caddy: operation not permitted` without
+# reaching its config), and `no_new_privs` refuses the privilege it would grant. This server listens
+# on 8080, so the capability was never needed for anything; taking it out here is what buys the
+# cluster manifest the right to drop every capability and run as a uid.
+#
+# The `test` is the assertion: `setcap -r` on a binary that failed to change would otherwise build an
+# image that only fails to start in production. `getcap` prints nothing once the xattr is gone, and
+# libcap is removed afterwards so the runtime image keeps exactly the packages it shipped with.
+RUN apk add --no-cache libcap \
+ && setcap -r /usr/bin/caddy \
+ && test -z "$(getcap /usr/bin/caddy)" \
+ && apk del libcap
+
+# uid 101 has no name in this image's /etc/passwd — the caddy image does not create a user — and a
+# numeric user is the only kind Kubernetes can check against `runAsNonRoot`. Two directories are
+# then owed to it and arrive as emptyDir volumes from the cluster manifest: /data, which Caddy uses
+# for certificate storage even when TLS is terminated upstream, and /config/caddy, whose autosave
+# file Caddy tries to write on every start.
+USER 101
+
+# No HEALTHCHECK: a container's readiness is a probe in the cluster manifest, and a second answer to
+# that question in a second place is how the two get to disagreeing.
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /ws/apps/web/dist /srv
+EXPOSE 8080

@@ -1,0 +1,54 @@
+# Serves the built SPA. This file is copied into the web image by Dockerfile.web; it is not the
+# gateway's Caddyfile, and the two do not import each other — one directory is a public edge with
+# certificates, this one is a static file server behind Traefik.
+#
+# Cluster Caddy comes from `caddy:alpine` (2.11 at the time of writing), the gateway pins its own
+# version; both speak this syntax, which is the reason the web image is Caddy and not nginx.
+
+{
+	# No admin API: nothing inside the cluster is going to reconfigure this server, and an open port
+	# 2019 is a way for a pod to be edited by a neighbour.
+	admin off
+}
+
+# 8080 rather than 80: a container should not need a privileged port, and the cluster reaches it
+# through a Service, so the number is ours to choose. The port belongs to the site address — there
+# is no global option for it, and `caddy run` does not explain that it met one: it exits 1 after
+# logging "using config from file" and says nothing more. `caddy validate` names the line.
+:8080 {
+	root * /srv
+
+	# Compression by content type, so the 325 kB chunk goes out at roughly a tenth of its size
+	# without anyone remembering to list a mime type.
+	encode zstd gzip
+
+	# The chunk name carries its content hash (index-XOEucMfC.js), so it may be cached for a year;
+	# index.html is the only thing that can go stale, and it is what the browser has to re-read to
+	# notice a deploy at all.
+	header /assets/* Cache-Control "public, max-age=31536000, immutable"
+
+	# / and /index.html are the same object and need the same answer, so the matcher is a path group
+	# rather than a bare path — `header /index.html ...` would not cover a request for /.
+	@index path / /index.html
+	header @index Cache-Control "no-cache"
+
+	# Deep links, with two exclusions that are the whole point. A reload on /todos/1 asks the server
+	# for a file that does not exist; without a fallback the answer is Caddy's 404 instead of the SPA
+	# that would render the page. But a hashed chunk under /assets/ that is missing is a stale deploy,
+	# and a real file at any other path (favicon.ico, robots.txt) is a real file — serving index.html
+	# for either is how a 404 becomes a syntax error in the browser. So: fall back only where the path
+	# is not an asset and no file exists there. (`try_files` with a matcher reads as the shorter way to
+	# say this and silently rewrites anyway; `rewrite` with a matcher is the form that means it.)
+	@spa {
+		not path /assets/*
+		not file {http.request.uri.path}
+	}
+	rewrite @spa /index.html
+
+	file_server
+
+	# /api is deliberately absent. The client calls the relative /api/todos, and who turns that into a
+	# request the API understands is a decision with exactly one answer to be written down once — in
+	# the API's routing, or in a Traefik middleware. A third copy here is how the dev proxy and
+	# production stop matching.
+}
